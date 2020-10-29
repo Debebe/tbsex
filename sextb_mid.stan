@@ -60,12 +60,6 @@ functions{
 data{
   real targetd;
   real targetdsig;
-  
-  // real targetd_f;
-  // real targetd_fsig;
-  // real targetd_m;
-  // real targetd_msig;
-  
   real targetMF;
   real targetMFsig;
   real targetNf;          
@@ -77,8 +71,9 @@ data{
   real pm;  
   real tau;                     /* treatment duration */
   real theta; 
-  /* parameters */
   real mu;                      /* background mortality */
+  /* parameters */
+ 
   /* priors parms */
   real psi_a; real psi_b;  /* protection */
   real recov_m; real recov_s;/* selfcure rate */
@@ -107,9 +102,6 @@ parameters{
   real<lower=0>  mutb;    /* TB mortality rate */
   real<lower=0, upper=1>cdrprop;                   /* detection prop */
   real<lower=0>  beta;           /* effective contact rate */
-  
- // real<lower=0,upper=1> rho        
-  //real<lower=0,upper=1> rrcdr;  
   real<lower=0> rrcdr;      
   real<lower=0> rrprog;  
   real<lower=0 ,upper=1>contacts;
@@ -136,12 +128,9 @@ transformed parameters{
   real<lower=0> relapsef;
   real<lower=0> relapsem;  
   
-  real<lower=0> pnrf; /*DSA*/
-  real<lower=0> pnrm; /*DSA*/
+  real<lower=0> pnrf; /*prev to notif females*/
+  real<lower=0> pnrm; /*prev to notif males */
   
-  // tau = 2.0;                    /* treatment duration */
-  // theta = 0.91;
-
    cdr=cdrprop*(recov + mutb +mu)/(1-cdrprop);
    reactf= 2*react/(1+rrprog);
    reactm= rrprog*reactf;
@@ -151,7 +140,6 @@ transformed parameters{
    cdrm = rrcdr*cdrf; 
    relapsef = 2*relapse/(1+rrprog);
    relapsem = rrprog*relapsef; 
-   //rho = 2*contacts-1;
    rho = (2*contacts-1);
 
   
@@ -164,10 +152,9 @@ transformed parameters{
 
   d = (df + dm)/2;
   MF = dm / (df + 1e-10);
-  //n = (df*cdrf + dm*cdrm)/2;
   nf = df*cdrf;
   nm = dm*cdrm;
-  n = (nf + nm)/2; /* average not*/
+  n = (nf + nm)/2; /* average notif*/
   pnrf= df/nf;
   pnrm= dm/nm;
 }
@@ -183,21 +170,13 @@ model{
   mutb ~ lognormal(mutb_m,mutb_s);            /* TB mortality */
   cdrprop ~ beta(cdr_m,cdr_s);                /* detect prop*/
   beta ~ lognormal(beta_m,beta_s);            /* infection parameter*/
-  
-  //rho    ~ beta(rho_a, rho_a);
-  //contacts ~ normal(rho_a, rho_b);
-  //contacts ~ beta(rho_a, rho_b);
   contacts ~ lognormal(rho_a, rho_b);
-  rrprog ~ lognormal(rrprog_a,rrprog_b);      /* relative progression parameter*/ /*DSA*/
-  rrcdr  ~ lognormal(rrcdr_a,rrcdr_b);        /* relative CDR parameter*/        /*DSA*/
+  rrprog ~ lognormal(rrprog_a,rrprog_b);      /* relative progression parameter*/
+  rrcdr  ~ lognormal(rrcdr_a,rrcdr_b);        /* relative CDR parameter*/
 
   /* calibration and model defn targets */
   target += -(d-targetd)^2 / (2*targetdsig^2);
-  // target += -(df-targetd_f)^2 / (2*targetd_fsig^2);
-  // target += -(dm-targetd_m)^2 / (2*targetd_msig^2);
-
   target += -(MF-targetMF)^2 / (2*targetMFsig^2);
-  //target += -(n-targetN)^2 / (2*targetNsig^2);      /* notif*/
   target += -(nf-targetNf)^2 / (2*targetNfsig^2);      /* notif*/
   target += -(nm-targetNm)^2 / (2*targetNmsig^2);      /* notif*/
   target += -Qm^2 / (2*Qtol^2);
