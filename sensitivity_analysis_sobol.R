@@ -211,7 +211,6 @@ time_diff <-end_time-start_time
 
 
 
-library(data.table)
 
 equil_prev <- list()
 equil_mfr  <- list()
@@ -252,8 +251,6 @@ SB$parameter <- factor(SB$parameter, levels = c("beta","contacts","reactivation"
 
 
 
-library(dplyr)
-library(ggplot2)
 SB<-SB %>% mutate(
   conf.upper = value + confint,
   conf.lower = if_else(confint > value, 0, value - confint))
@@ -264,8 +261,6 @@ ggplot(SB) + aes(x = parameter, y = value, fill = index,
   geom_errorbar(position = position_dodge(0.5), width = 0.25) +
   facet_wrap(~output, scales = "free_y", ncol = 2) +
   theme(legend.position = "top") + 
-  # scale_fill_brewer(NULL) + theme_bw() + theme(text = element_text(size = 14))+
-  #scale_fill_manual(values=c("#E69F00", "#66CC99"))+ theme_bw() + theme(text = element_text(size = 13))+
   scale_fill_brewer(palette = 'Dark2') + theme_bw() + theme(text = element_text(size = 14))+
   coord_flip()+scale_x_discrete(labels = c(expression(beta),
                                            expression(rho),
