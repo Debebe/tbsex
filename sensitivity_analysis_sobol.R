@@ -1,17 +1,10 @@
 
-.libPaths()
-
-.libPaths("C:/Program Files/R/R-4.0.2/library" )
-
-library("data.table")
-
-library(ggplot2)
-
-
-setwd("~/Dropbox/SexTBD")
 
 library(odin)
 library(data.table)
+library(ggplot2)
+library(reticulate)
+
 
 SexTB <- odin::odin({
   nsex <- user(2)
@@ -99,7 +92,6 @@ SexTB <- odin::odin({
   mutb        <- user()             
   stab        <- user()
   psi         <- user()             
-  #rho         <- user()
   tau         <- user()          # inverse of treatment duration
   theta       <- user()          # proportion of treated cured
   
@@ -118,8 +110,6 @@ SexTB <- odin::odin({
   dim(prev)   <- n
 },target="c")
 
-library(data.table)
-library(reticulate)
 
 use_python("/Library/Frameworks/Python.framework/Versions/3.8/bin/python3")
 reticulate::py_config()
