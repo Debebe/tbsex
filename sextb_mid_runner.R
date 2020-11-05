@@ -8,26 +8,10 @@ library(bayesplot)
 
 source('priorsRevised_new.R')  # source priors
 
-priors$rrcdr_a=-0.298
-priors$rrcdr_b=0.2026 
 
+lm <- stan_model('sextb_mid.stan') # compile model
 
-priors$rrprog_a <- -0.298
-priors$rrprog_b <- 4*0.2026 
-
-
-priors$rho_a=-0.57
-priors$rho_b=0.085
-
-priors$stab_s <-0.068
-
-priors$cdr_m <-5.6
-priors$cdr_s <-3.5
-
-
-lm <- stan_model('sextb_mid.stan')
-
-#--------------Uganda(2014/2015- WHO-2016, )
+#--------------Uganda
 priorsU <- c(priors,list(targetd=401e-5,targetdsig=401e-5/10,
                          targetMF=4.1,targetMFsig=4.1/10,
                          targetNf= 79e-5, targetNfsig=79e-5/10,
