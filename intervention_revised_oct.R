@@ -15,7 +15,7 @@ library(Rmisc) # for CI
 library(dplyr)
 
 
-load("~/Dropbox/SexTB/Clean/Data/sampsU.Rdata")  # load posterior samples from Stan
+load("~/Dropbox/SexTB/Clean/Data/sampsU.Rdata")      # load posterior samples from Stan
 source('~/Dropbox/SexTB/Clean/Codes/parms_sextb.R')  # Model parameters
 source('~/Dropbox/SexTB/Clean/Codes/Sex_TB_IntervR.R') 
 
@@ -38,7 +38,7 @@ setnames(DT, "lp__" , 'lp')
 
 
 # sample from different regions
-### Reactivation and Differential progression
+# differential detection and Differential progression
 
 ggplot(DT, aes(rrcdr, rrprog)) +geom_point() # positive corr
 
@@ -46,18 +46,17 @@ main.r=0.05
 minor.r=0.03
 # lower region
 ellL <- Ellipse$new(center = c(quantile(DT$rrcdr,0.25), quantile(DT$rrprog, 0.25)), rmajor = main.r, rminor = minor.r, alpha=90)
-ellpathL <- ellL$path() # ellipse as a path
-ellpathL <- rbind(ellpathL, ellpathL[1,]) # the path is not closed; close it
-
+ellpathL <- ellL$path() 
+ellpathL <- rbind(ellpathL, ellpathL[1,]) 
 #mid region
 ellM <- Ellipse$new(center = c(quantile(DT$rrcdr,0.5), quantile(DT$rrprog, 0.5)), rmajor = main.r, rminor = minor.r, alpha=90)
-ellpathM <- ellM$path() # ellipse as a path
-ellpathM <- rbind(ellpathM, ellpathM[1,]) # the path is not closed; close it
+ellpathM <- ellM$path() 
+ellpathM <- rbind(ellpathM, ellpathM[1,]) 
 
 # upper region
 ellU <- Ellipse$new(center = c(quantile(DT$rrcdr,0.75), quantile(DT$rrprog, 0.75)), rmajor = main.r, rminor = minor.r, alpha=90)
-ellpathU <- ellU$path() # ellipse as a path
-ellpathU <- rbind(ellpathU, ellpathU[1,]) # the path is not closed; close it
+ellpathU <- ellU$path() 
+ellpathU <- rbind(ellpathU, ellpathU[1,]) 
 
 
 
@@ -137,7 +136,7 @@ data_3Regions[,.(quant25= quantile(lp,0.25),
                  quant95=quantile(lp,0.95)), by= 'region']
 
 # densities at each region
-all_regions<- DT[, .(rrcdr, rrprog, lp)]   # select columns
+all_regions<- DT[, .(rrcdr, rrprog, lp)]       # select columns
 all_regions[, region:= 'all']                  # create region variable
 
 sampled <- data_3Regions[, .(rrcdr, rrprog,lp, region)] # select colms
@@ -152,7 +151,7 @@ d1 <-ggplot(all,aes(x=lp, fill=region)) + geom_density(alpha=0.5) +
 d1
 
 
-#### Wrapper function to run intervention
+# Wrapper function to run intervention
 out<-list()
 PL= pms
 PL$RRcdr <- NULL   # remove RRcdr as it is intervention
@@ -191,8 +190,7 @@ runn <-function(data, group,RR) { #make sure interference with names with in fun
     baseline <- rep(data$rrcdr[i], tmax+1)
     interv= baseline
     interv[2021:tmax+1] <-1
-    #PL$RRcdr_interv<-interv
-    
+
     if (RR==0){
       PL$RRcdr_interv =baseline
     }
@@ -204,7 +202,6 @@ runn <-function(data, group,RR) { #make sure interference with names with in fun
     outl <- mod0$run(t= 0:tmax, len = tmax) #TODO
     
     outl <- data.frame(outl)
-    #outl$rr <- PL$RRcdr_interv
 
     
     out[[i]] <- data.table(MFR= tail(outl$MFratio, 15),
@@ -247,43 +244,11 @@ out_Ub[, c('Intervention', 'Region'):= list('No', 'U')]
 out_UI[, c('Intervention', 'Region'):= list('Yes', 'U')]
 
 DTT <-rbind(out_Lb, out_LI, out_Mb, out_MI, out_Ub,out_UI )
-tmpprev<- DTT[, .(prev=mean(prev)), by=.(year, Intervention, Region)]
-tmpmfr <- DTT[, .(MFR=mean(MFR)), by=.(year, Intervention, Region)]
-
-save(DTT, file= "Clean/Data/rrcdr_rrprog_posterior_regions_ethiopia.Rdata") #Uganda
 
 yr=2030
-# pop attributable fraction
-prev_2030 <- tmpprev[year==yr]
-mfr_2030 <- tmpmfr[year==yr]
 
 
-PAF_prevalence <- prev_2030 %>%             
-  group_by(Region) %>%            
-  summarize(PAF = 100*(first(prev)-last(prev))/first(prev))
-#summarize(prev2 = 100*(max(prev)-min(prev))/max(prev))
-
-PAF_mfr <- mfr_2030 %>%             
-  group_by(Region) %>%            
-  summarize(PAF = 100*(first(MFR)-last(MFR))/first(MFR))
-#summarize(prev2 = 100*(max(prev)-min(prev))/max(prev))
-
-a<-ggplot(tmpprev[year==yr], aes(x=Region, y=prev, fill= Intervention)) +
-  geom_bar(stat="identity", position=position_dodge())+
-  scale_fill_brewer(palette="Paired")+
-  theme_minimal() + coord_flip() + ylab('Prevalence')
-
-b<-ggplot(tmpmfr[year==yr], aes(x=Region, y=MFR, fill= Intervention)) +
-  geom_bar(stat="identity", position=position_dodge())+
-  scale_fill_brewer(palette="Paired")+
-  theme_minimal() + coord_flip() + ylab('M:F ratio')
-
-a/b  + plot_annotation(
-  title = 'Intervention impact at different regions of joint posterior\ 
-  distribution of rrcdr and rrprog')
-
-#======PAF intervention=========
-#===population attributable fraction====
+#===Percentage reduction in model outcomes====
 pop_attr_frac_prev<- DTT[year==yr, .(PAF=100*(first(prev)-last(prev))/first(prev)), by=.(index, Region)]
 pop_attr_frac_mfr<- DTT[year==yr, .(PAF=100*(first(MFR)-last(MFR))/first(MFR)), by=.(index, Region)]
 
@@ -297,14 +262,8 @@ PA_prev$outcome <- 'prevalence'
 PA_mfr$outcome  <- 'M:F ratio'
 PA_combined =rbind(PA_prev, PA_mfr)
 
-paf1 <- ggplot(PA_combined, aes(x=Region, y=mean, fill=outcome)) +
-  geom_bar(position=position_dodge(), stat="identity", colour='black') +
-  geom_errorbar(aes(ymin=low, ymax=hi), width=.2,position=position_dodge(.9))+
-  theme_classic() + scale_fill_brewer(palette="Paired")+
-  ylab('Reduction (%)') + coord_flip() + ggtitle('a')
 
-
-###=====rho and rrprog=====
+#====Assortativity and differential progression=====
 
 ggplot(DT, aes(x=rho, y=rrprog)) +
   geom_point(size=1, shape=15)
@@ -313,18 +272,18 @@ main.r=0.05
 minor.r=0.03
 
 ellL <- Ellipse$new(center = c(quantile(DT$rho,0.25), quantile(DT$rrprog, 0.75)), rmajor = main.r, rminor = minor.r, alpha = 90)
-ellpathL <- ellL$path() # ellipse as a path
-ellpathL <- rbind(ellpathL, ellpathL[1,]) # the path is not closed; close it
+ellpathL <- ellL$path()
+ellpathL <- rbind(ellpathL, ellpathL[1,]) 
 
 
 ellM <- Ellipse$new(center = c(quantile(DT$rho,0.50), quantile(DT$rrprog, 0.50)), rmajor = main.r, rminor = minor.r, alpha = 90)
-ellpathM <- ellM$path() # ellipse as a path
-ellpathM <- rbind(ellpathM, ellpathM[1,]) # the path is not closed; close it
+ellpathM <- ellM$path() 
+ellpathM <- rbind(ellpathM, ellpathM[1,]) 
 
 
 ellU <- Ellipse$new(center = c(quantile(DT$rho,0.75), quantile(DT$rrprog, 0.25)), rmajor = main.r, rminor = minor.r, alpha = 90)
-ellpathU <- ellU$path() # ellipse as a path
-ellpathU <- rbind(ellpathU, ellpathU[1,]) # the path is not closed; close it
+ellpathU <- ellU$path() 
+ellpathU <- rbind(ellpathU, ellpathU[1,]) 
 
 
 pd <-ggplot() +
@@ -450,48 +409,10 @@ out_Ub[, c('Intervention', 'Region'):= list('no', 'U')]
 out_UI[, c('Intervention', 'Region'):= list('yes', 'U')]
 
 DTT <-rbind(out_Lb, out_LI, out_Mb, out_MI, out_Ub,out_UI )
-tmpprev<- DTT[, .(prev=mean(prev)), by=.(year, Intervention, Region)]
-tmpmfr <- DTT[, .(MFR=mean(MFR)), by=.(year, Intervention, Region)]
-
-save(DTT, file= "Clean/Data/rho_rrprog_posterior_regions_uganda.Rdata") #Uganda
-save(DTT, file= "Clean/Data/rho_rrprog_posterior_regions_ethiopia.Rdata") #Uganda
-
-c<-ggplot(tmpprev[year==yr], aes(x=Region, y=prev, fill= Intervention)) +
-  geom_bar(stat="identity", position=position_dodge())+
-  scale_fill_brewer(palette="Paired")+
-  theme_minimal() + coord_flip() + ylab('Prevalence')
-
-d<-ggplot(tmpmfr[year==yr], aes(x=Region, y=MFR, fill= Intervention)) +
-  geom_bar(stat="identity", position=position_dodge())+
-  scale_fill_brewer(palette="Paired")+
-  theme_minimal() + coord_flip() + ylab('M:F ratio')
-
-c/d  + plot_annotation(
-  title = 'Intervention impact at different regions of joint posterior\ 
- distribution of rho and rho')
-#ggsave('FigInt2_rho_rrprog.png')
-
-#========PAF2======
-# pop attributable fraction
-prev_2030 <- tmpprev[year==yr]
-mfr_2030 <- tmpmfr[year==yr]
-
-PAF_prevalence <- prev_2030 %>%             
-  group_by(Region) %>%            
-  summarize(PAF = 100*(first(prev)-last(prev))/first(prev))
-#summarize(prev2 = 100*(max(prev)-min(prev))/max(prev))
-PAF_prevalence
-
-PAF_mfr <- mfr_2030 %>%             
-  group_by(Region) %>%            
-  summarize(PAF = 100*(first(MFR)-last(MFR))/first(MFR))
-#summarize(prev2 = 100*(max(prev)-min(prev))/max(prev))
-PAF_mfr
 
 
-#======PAF intervention=========
-
-#===population attributable fraction====
+yr=2030
+#===percentage reduction in outcomes ====
 pop_attr_frac_prev<- DTT[year==yr, .(PAF=100*(first(prev)-last(prev))/first(prev)), by=.(index, Region)]
 pop_attr_frac_mfr<- DTT[year==yr, .(PAF=100*(first(MFR)-last(MFR))/first(MFR)), by=.(index, Region)]
 
@@ -504,15 +425,8 @@ PA_prev$outcome <- 'prevalence'
 PA_mfr$outcome  <- 'M:F ratio'
 PA_combined =rbind(PA_prev, PA_mfr)
 
-paf2 <- ggplot(PA_combined, aes(x=Region, y=mean, fill=outcome)) +
-  geom_bar(position=position_dodge(), stat="identity", colour='black') +
-  geom_errorbar(aes(ymin=low, ymax=hi), width=.2,position=position_dodge(.9))+
-  theme_classic() + scale_fill_brewer(palette="Paired")+
-  ylab('Reduction (%)') + coord_flip() + ggtitle('b')
 
-
-#====rho and rrcdr======
-
+#====Assortativity and differential progression======
 
 ggplot(DT, aes(x=rho, y=rrcdr)) +
   geom_point(size=1, shape=15)
@@ -522,18 +436,18 @@ rmain= 0.05
 rmin=  0.02
 # construct ellipses
 ellL <- Ellipse$new(center = c(quantile(DT$rho,0.25), quantile(DT$rrcdr, 0.25)), rmajor = rmain, rminor = rmin, alpha = 90)
-ellpathL <- ellL$path() # ellipse as a path
-ellpathL <- rbind(ellpathL, ellpathL[1,]) # the path is not closed; close it
+ellpathL <- ellL$path() 
+ellpathL <- rbind(ellpathL, ellpathL[1,]) 
 
 
 ellM <- Ellipse$new(center = c(quantile(DT$rho,0.50), quantile(DT$rrcdr, 0.50)), rmajor = rmain, rminor = rmin, alpha = 90)
-ellpathM <- ellM$path() # ellipse as a path
-ellpathM <- rbind(ellpathM, ellpathM[1,]) # the path is not closed; close it
+ellpathM <- ellM$path() 
+ellpathM <- rbind(ellpathM, ellpathM[1,]) 
 
 
 ellU <- Ellipse$new(center = c(quantile(DT$rho,0.75), quantile(DT$rrcdr, 0.75)), rmajor = rmain, rminor = rmin, alpha = 90)
-ellpathU <- ellU$path() # ellipse as a path
-ellpathU <- rbind(ellpathU, ellpathU[1,]) # the path is not closed; close it
+ellpathU <- ellU$path() 
+ellpathU <- rbind(ellpathU, ellpathU[1,]) 
 
 
 pd <-ggplot() +
@@ -544,7 +458,7 @@ pd <-ggplot() +
 
 pd
 
-#### extract all points
+# extract all points
 
 build <- ggplot_build(pd)$data
 points <- build[[1]]
@@ -595,8 +509,7 @@ p1 + p2 + p3 +
   plot_layout(ncol = 2) + 
   plot_annotation('Sampled regions of joint posterior distributions')
 
-ggsave('Clean/plots/SampleRegion.png')
-ggsave('Clean/plots/SampleRegion.pdf')
+
 
 
 
@@ -660,9 +573,6 @@ d1+d2+d3 +
   plot_layout(ncol = 2) + 
   plot_annotation('Log-posterior at sampled regions of joint posterior distributions')
 
-ggsave('Clean/plots/FigDensityRegion.png')
-ggsave('Clean/plots/FigDensityRegion.pdf')
-
 
 
 ##call warpper function to run intervention
@@ -695,67 +605,11 @@ out_Ub[, c('Intervention', 'Region'):= list('no', 'U')]
 out_UI[, c('Intervention', 'Region'):= list('yes', 'U')]
 
 DTT <-rbind(out_Lb, out_LI, out_Mb, out_MI, out_Ub,out_UI )
-tmpprev<- DTT[, .(prev=mean(prev)), by=.(year, Intervention, Region)]
-tmpmfr <- DTT[, .(MFR=mean(MFR)), by=.(year, Intervention, Region)]
-save(DTT, file= "Clean/Data/rho_rrcdr_posterior_regions_uganda.Rdata") #Uganda
-save(DTT, file= "Clean/Data/rho_rrcdr_posterior_regions_ethiopia.Rdata") #Uganda
 
-yr=2030
-e<-ggplot(tmpprev[year==yr], aes(x=Region, y=prev, fill= Intervention)) +
-  geom_bar(stat="identity", position=position_dodge())+
-  scale_fill_brewer(palette="Paired")+
-  theme_minimal() + coord_flip() + ylab('Prevalence')
-
-f<-ggplot(tmpmfr[year==yr], aes(x=Region, y=MFR, fill= Intervention)) +
-  geom_bar(stat="identity", position=position_dodge())+
-  scale_fill_brewer(palette="Paired")+
-  theme_minimal() + coord_flip() + ylab('M:F ratio')
-
-e/f  + plot_annotation(
-  title = 'Intervention impact at different regions of joint posterior\ 
-  distribution of social mixing and rrcdr')
-
-# Population attributable fraction of intervention
-prev_2030 <- tmpprev[year==yr]
-mfr_2030 <- tmpmfr[year==yr]
-
-PAF_prevalence <- prev_2030 %>%             
-  group_by(Region) %>%            
-  summarize(PAF = 100*(first(prev)-last(prev))/first(prev))
-#summarize(prev2 = 100*(max(prev)-min(prev))/max(prev))
-PAF_prevalence
-
-PAF_mfr <- mfr_2030 %>%             
-  group_by(Region) %>%            
-  summarize(PAF = 100*(first(MFR)-last(MFR))/first(MFR))
-#summarize(prev2 = 100*(max(prev)-min(prev))/max(prev))
-PAF_mfr
-
-# label by joint distribution type a- react & rrprog, b= rho and rrprog, c=rho & beta
-a <-a +ggtitle('a')
-c <-c+ggtitle('b')
-e <-e+ggtitle('c')
-
-
-allplots <-a+c+e+b+ d+f+
-  plot_layout(ncol = 3) + 
-  plot_annotation('')
-
-# use common legend at bottom
-combined <- allplots & theme_classic() + 
-  theme(plot.title = element_text(hjust = 0))
-combined <- combined & theme(legend.position = "bottom") 
-combined + plot_layout(guides = "collect")
-
-ggsave('Clean/Plots/interv_allU.png')
-ggsave('Clean/PLots/interv_allU.pdf')
-
-#======PAF intervention=========
 
 #===population attributable fraction====
 pop_attr_frac_prev<- DTT[year==yr, .(PAF=100*(first(prev)-last(prev))/first(prev)), by=.(index, Region)]
 pop_attr_frac_mfr<- DTT[year==yr, .(PAF=100*(first(MFR)-last(MFR))/first(MFR)), by=.(index, Region)]
-pop_attr_frac_prev[PAF<0, PAF:=0]
 
 #======confidence interval========
 PA_prev <-pop_attr_frac_prev[, .(mean= mean(PAF), low= quantile(PAF, 0.025), hi=quantile(PAF, 0.975)), by = Region]
@@ -765,66 +619,4 @@ PA_prev$outcome <- 'prevalence'
 PA_mfr$outcome  <- 'M:F ratio'
 PA_combined =rbind(PA_prev, PA_mfr)
 
-# plot
-paf3 <- ggplot(PA_combined, aes(x=Region, y=mean, fill=outcome)) +
-  geom_bar(position=position_dodge(), stat="identity", colour='black') +
-  geom_errorbar(aes(ymin=low, ymax=hi), width=.2,position=position_dodge(.9))+
-  theme_classic() + scale_fill_brewer(palette="Paired")+
-  ylab('Reduction (%)') + coord_flip() + ggtitle('c')
 
-
-
-allfigs <-paf1 + paf2 + paf3 + 
-  plot_layout(ncol = 3) + 
-  plot_annotation()
-
-
-# use common legend at bottom
-combined <- allfigs & theme_classic() + 
-  theme(plot.title = element_text(hjust = 0))
-combined <- combined & theme(legend.position = "bottom") 
-combined + plot_layout(guides = "collect")
-
-ggsave('Clean/Plots/reduction_intervU.png')
-
-#=====dynamics=====
-dts <- DTT[, .(prev=mean(prev)), by =.(year, Intervention, Region)]
-ggplot(dts, aes(year, prev, col= Intervention)) +geom_line() +facet_wrap(~Region)
-
-
-# =======proccess pposterior sample======
-
-load("~/Dropbox/SexTB/Clean/Data/sample_posterior.Rdata")
-
-p1<-ggplot(rho_rrcdr_sample) +
-  geom_point(aes(x, y,color=region),size=1) + 
-  stat_ellipse(aes(x, y,color=region)) + xlab(expression(rho)) + 
-  theme_classic() +
-  ylab(expression(pi))
-
-p2<-ggplot(rho_rrprog_sample) +
-  geom_point(aes(x, y,color=region),size=1) + 
-  stat_ellipse(aes(x, y,color=region)) + xlab(expression(rho)) + 
-  theme_classic() +
-  ylab(expression(alpha))
-
-p3<-ggplot(rrcdr_rrprog_sample) +
-  geom_point(aes(x, y,color=region),size=1) + 
-  stat_ellipse(aes(x, y,color=region)) + xlab(expression(pi)) + 
-  theme_classic() +
-  ylab(expression(alpha))
-
-p1+p2+p3
-
-
-all_figs <- p1+p2+p3+
-  plot_layout(ncol = 3)
-
-# use common legend at bottom
-combined <- all_figs & theme_classic() + 
-  theme(plot.title = element_text(hjust = 0))
-combined <- combined & theme(legend.position = "bottom") 
-combined + plot_layout(guides = "collect")
-
-
-ggsave('Clean/plots/samps_UGA.png', height=3, width=4.5, dpi=300)
