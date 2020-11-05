@@ -16,7 +16,6 @@ Sex_TB_Interv <- odin::odin({
   lambda[]         <- sum(lambda_prod[i, ])             # rowSums
   output(lambda) <- TRUE                                
   
-  #=====derivatives=====
   N[]  <- S[i] + E[i] + L[i] + I[i]+ T[i] + R[i]
   totN <- sum(N[])
   output(N[])  <- TRUE
@@ -82,16 +81,12 @@ Sex_TB_Interv <- odin::odin({
   output(MFratio)  <-  prev[1]/prev[2]
   
   
-  #Beta[,]    <- user()              
   beta        <- user()
-  
   recov       <- user()             
   mu          <- user()              
   mutb        <- user()             
   stab        <- user()
   psi         <- user()             
-  #relapse     <- user()             
-  
   rho         <- user()
   tau         <- user()          # inverse of treatment duration
   theta       <- user()          # proportion of treated cured
