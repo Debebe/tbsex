@@ -25,7 +25,7 @@ priors <- list(
   rrprog_a=-0.298,
   rrprog_b= 0.8104, 
   rrcdr_a=-0.298,
-  rrcdr_b==0.2026      
+  rrcdr_b=0.2026      
 )
 
 
